@@ -12,11 +12,11 @@ interface Mergeable<Interface> {
 
 export interface SyncBuilder<Interface extends Record<string, any>> extends Mergeable<Interface>, Setable<Interface> {
   build(): Interface
-  transform<NewInterface>(transformFn: (state: Interface) => NewInterface): SyncBuilder<NewInterface>
+  transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): SyncBuilder<NewInterface>
 }
 
 export interface AsyncBuilder<Interface extends Record<string, any>> extends Mergeable<Interface>, Setable<Interface> {
   build(): Promise<Interface>
   setAsync<K extends keyof Interface>(key: K, value: ((state: Interface) => Promise<Primitive> )): this
-  transform<NewInterface>(transformFn: (state: Interface) => NewInterface): AsyncBuilder<NewInterface>
+  transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): AsyncBuilder<NewInterface>
 }

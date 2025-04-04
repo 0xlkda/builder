@@ -1,7 +1,7 @@
-import { SyncBuilder, AsyncBuilder, Primitive } from './types/builder.types'
+import { SyncBuilder, AsyncBuilder, Primitive } from './builder.types'
 
 export class BuilderService {
-  static createBuilder<Interface>(): SyncBuilder<Interface> {
+  static createBuilder<Interface extends Record<string, any>>(): SyncBuilder<Interface> {
     return new class implements SyncBuilder<Interface> {
       private state: Interface = {} as Interface
 
@@ -17,13 +17,13 @@ export class BuilderService {
       mergeTo<T extends Record<string, any>, P extends string>(target: T, prop?: P) {
         return Object.assign(target, prop ? { [prop]: this.state } : this.state)
       }
-      transform<NewInterface>(transformFn: (state: Interface) => NewInterface): SyncBuilder<NewInterface> {
+      transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): SyncBuilder<NewInterface> {
         this.state = transformFn(this.state) as unknown as Interface
         return this as unknown as SyncBuilder<NewInterface>
       }
     }
   }
-  static createAsyncBuilder<Interface>(): AsyncBuilder<Interface> {
+  static createAsyncBuilder<Interface extends Record<string, any>>(): AsyncBuilder<Interface> {
     return new class implements AsyncBuilder<Interface> {
       private state: Interface = {} as Interface
       private tasks: Promise<any>[] = []
@@ -48,7 +48,7 @@ export class BuilderService {
         this.tasks.push(task)
         return this
       }
-      transform<NewInterface>(transformFn: (state: Interface) => NewInterface): AsyncBuilder<NewInterface> {
+      transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): AsyncBuilder<NewInterface> {
         this.state = transformFn(this.state) as unknown as Interface
         return this as unknown as AsyncBuilder<NewInterface>
       }

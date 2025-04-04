@@ -8,14 +8,14 @@ export class BuilderService {
       build(): Interface {
         return this.state
       }
+      mergeTo<T extends Record<string, any>, P extends string>(target: T, prop?: P) {
+        return Object.assign(target, prop ? { [prop]: this.state } : this.state)
+      }
       set<K extends keyof Interface>(key: K, value: Interface[K] | ((state: Interface) => Interface[K])): this {
         this.state[key] = typeof value === 'function'
           ? (value as (state: Interface) => Primitive)(this.state) as Interface[K]
           : value
         return this
-      }
-      mergeTo<T extends Record<string, any>, P extends string>(target: T, prop?: P) {
-        return Object.assign(target, prop ? { [prop]: this.state } : this.state)
       }
       transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): SyncBuilder<NewInterface> {
         this.state = transformFn(this.state) as unknown as Interface

@@ -1,4 +1,4 @@
-import { SyncBuilder, AsyncBuilder, Primitive } from './builder.types'
+import { SyncBuilder, AsyncBuilder, Primitive, KeyValue } from './builder.types'
 
 export class BuilderService {
   static createBuilder<Interface>(): SyncBuilder<Interface> {

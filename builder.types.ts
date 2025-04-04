@@ -1,4 +1,5 @@
 export type Primitive = string | number | boolean | null
+export type KeyValue<K extends string = string, V = any> = Record<K, V>
 
 interface Setable<Interface> {
   set<K extends keyof Interface>(key: K, value: Interface[K]): this;
@@ -6,17 +7,29 @@ interface Setable<Interface> {
 }
 
 interface Mergeable<Interface> {
-  mergeTo<T extends Record<string, any>>(target: T): T & Interface
-  mergeTo<T extends Record<string, any>, P extends string>(target: T, prop?: P): T & { [K in P]: Interface }
+  mergeTo<T extends KeyValue>(target: T): T & Interface
+  mergeTo<T extends KeyValue, P extends string>(target: T, prop?: P): T & { [K in P]: Interface }
 }
 
-export interface SyncBuilder<Interface extends Record<string, any>> extends Mergeable<Interface>, Setable<Interface> {
+type RunType = 'SYNC' | 'ASYNC'
+
+interface Transformable<T, R extends RunType> {
+  transform<U>(transformFn: (state: T) => T & U): R extends 'SYNC'
+    ? SyncBuilder<ReturnType<typeof transformFn>>
+    : AsyncBuilder<ReturnType<typeof transformFn>>
+}
+
+export interface SyncBuilder<Interface extends KeyValue> extends
+  Mergeable<Interface>,
+  Setable<Interface>,
+  Transformable<Interface, 'SYNC'> {
   build(): Interface
-  transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): SyncBuilder<NewInterface>
 }
 
-export interface AsyncBuilder<Interface extends Record<string, any>> extends Mergeable<Interface>, Setable<Interface> {
+export interface AsyncBuilder<Interface extends KeyValue> extends
+  Mergeable<Interface>,
+  Setable<Interface>,
+  Transformable<Interface, 'ASYNC'> {
   build(): Promise<Interface>
   setAsync<K extends keyof Interface>(key: K, value: ((state: Interface) => Promise<Primitive> )): this
-  transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): AsyncBuilder<NewInterface>
 }

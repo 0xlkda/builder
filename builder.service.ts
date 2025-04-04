@@ -1,29 +1,29 @@
 import { SyncBuilder, AsyncBuilder, Primitive } from './builder.types'
 
 export class BuilderService {
-  static createBuilder<Interface extends Record<string, any>>(): SyncBuilder<Interface> {
+  static createBuilder<Interface>(): SyncBuilder<Interface> {
     return new class implements SyncBuilder<Interface> {
       private state: Interface = {} as Interface
 
       build(): Interface {
         return this.state
       }
-      mergeTo<T extends Record<string, any>, P extends string>(target: T, prop?: P) {
+      mergeTo<T extends KeyValue, P extends string>(target: T, prop?: P) {
         return Object.assign(target, prop ? { [prop]: this.state } : this.state)
       }
-      set<K extends keyof Interface>(key: K, value: Interface[K] | ((state: Interface) => Interface[K])): this {
+      transform<U>(transformFn: (state: Interface) => Interface & U) {
+        this.state = transformFn(this.state)
+        return this as SyncBuilder<ReturnType<typeof transformFn>>
+      }
+      set<K extends keyof Interface>(key: K, value: Interface[K] | ((state: Interface) => Interface[K])) {
         this.state[key] = typeof value === 'function'
           ? (value as (state: Interface) => Primitive)(this.state) as Interface[K]
           : value
         return this
       }
-      transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): SyncBuilder<NewInterface> {
-        this.state = transformFn(this.state) as unknown as Interface
-        return this as unknown as SyncBuilder<NewInterface>
-      }
     }
   }
-  static createAsyncBuilder<Interface extends Record<string, any>>(): AsyncBuilder<Interface> {
+  static createAsyncBuilder<Interface>(): AsyncBuilder<Interface> {
     return new class implements AsyncBuilder<Interface> {
       private state: Interface = {} as Interface
       private tasks: Promise<any>[] = []
@@ -32,25 +32,25 @@ export class BuilderService {
         await Promise.all(this.tasks)
         return this.state
       }
-      mergeTo<T extends Record<string, any>, P extends string>(target: T, prop?: P) {
+      mergeTo<T extends KeyValue, P extends string>(target: T, prop?: P) {
         return Object.assign(target, prop ? { [prop]: this.state } : this.state)
       }
-      set<K extends keyof Interface>(key: K, value: Interface[K] | ((state: Interface) => Interface[K])): this {
+      transform<U>(transformFn: (state: Interface) => Interface & U) {
+        this.state = transformFn(this.state)
+        return this as AsyncBuilder<ReturnType<typeof transformFn>>
+      }
+      set<K extends keyof Interface>(key: K, value: Interface[K] | ((state: Interface) => Interface[K])) {
         this.state[key] = typeof value === 'function'
           ? (value as (state: Interface) => Primitive)(this.state) as Interface[K]
           : value
         return this
       }
-      setAsync<K extends keyof Interface>(key: K, asyncFn: ((state: Interface) => Promise<Primitive>)): this {
+      setAsync<K extends keyof Interface>(key: K, asyncFn: ((state: Interface) => Promise<Primitive>)) {
         const task = asyncFn(this.state).then((result) => {
           this.state[key] = result as Interface[K]
         })
         this.tasks.push(task)
         return this
-      }
-      transform<NewInterface extends Record<string, any>>(transformFn: (state: Interface) => NewInterface): AsyncBuilder<NewInterface> {
-        this.state = transformFn(this.state) as unknown as Interface
-        return this as unknown as AsyncBuilder<NewInterface>
       }
     }
   }
